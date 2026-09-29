@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee Analytics — Portfólio Acadêmico</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.3/papaparse.min.js"></script>
+<!-- Biblioteca para ler arquivos Excel (.xlsx / .xls) -->
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+
+<style>
+:root{
+  --espresso:#2b211d; --coffee:#6f4e37; --coffee2:#9a7657; --cream:#f7f3ee;
+  --paper:#fffdf9; --ink:#27221f; --muted:#766e68; --line:#e9e1d8;
+  --green:#54745b; --gold:#c4954d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:Inter,system-ui,sans-serif;}
+.hero{background:linear-gradient(135deg,#241b18 0%,#493126 52%,#6f4e37 100%);color:#fff;padding:48px 0 42px;position:relative;overflow:hidden;}
+.hero:after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;border:1px solid rgba(255,255,255,.12);right:-90px;top:-130px;box-shadow:0 0 0 35px rgba(255,255,255,.03),0 0 0 70px rgba(255,255,255,.025);}
+.eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:.73rem;font-weight:700;opacity:.72}
+.hero h1{font-family:"Playfair Display",serif;font-size:clamp(2rem,4vw,3.4rem);margin:.4rem 0 .5rem}
+.hero p{max-width:780px;color:rgba(255,255,255,.78);margin:0}
+.section-title{font-weight:800;font-size:1.15rem;margin:0}
+.section-sub{font-size:.85rem;color:var(--muted);margin-top:4px}
+.cardx{background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 30px rgba(60,42,30,.055);height:100%;}
+.kpi{padding:20px 22px;position:relative;overflow:hidden}
+.kpi .label{font-size:.73rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700}
+.kpi .value{font-size:1.65rem;font-weight:800;margin-top:7px;color:var(--espresso)}
+.kpi .small{font-size:.76rem;color:var(--muted);margin-top:3px}
+.kpi:after{content:"";position:absolute;right:-24px;bottom:-32px;width:90px;height:90px;border-radius:50%;background:rgba(111,78,55,.07)}
+.panel{padding:18px}
+.panel-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:8px}
+.chart{width:100%;min-height:350px}
+.chart-sm{min-height:300px}
+.badge-soft{background:#eee6df;color:#5d4434;border:1px solid #e0d4c8}
+.insight{border-left:4px solid var(--coffee);background:#fbf7f2;padding:16px 17px;border-radius:10px;margin-bottom:10px}
+.insight strong{display:block;font-size:.82rem;margin-bottom:4px}
+.insight span{font-size:.83rem;line-height:1.55;color:#5e5752}
+.controls{background:#2d2420;color:#fff;border-radius:18px;padding:18px;}
+.controls label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#cfc2b8;font-weight:700}
+.form-select{border:1px solid #5b4b42;background:#3a2e28;color:#fff;border-radius:10px;font-size:.84rem;}
+.form-select:focus{box-shadow:0 0 0 .2rem rgba(196,149,77,.18);border-color:#c4954d}
+.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--line)}
+table{margin:0!important;font-size:.8rem}
+thead th{background:#f3ece5!important;color:#4b3b31!important;white-space:nowrap}
+td,th{padding:.65rem .75rem!important}
+.note{font-size:.76rem;color:var(--muted);line-height:1.55}
+.footer{border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-size:.78rem}
+.navbarx{background:rgba(255,253,249,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.navbarx a{color:#51473f;text-decoration:none;font-size:.78rem;font-weight:600}
+.loading{padding:80px;text-align:center;color:var(--muted)}
+.spinner-border{color:var(--coffee)}
+@media(max-width:768px){.hero{padding:34px 0}.panel{padding:12px}.chart{min-height:300px}}
+</style>
+</head>
+
+<body>
+<nav class="navbarx sticky-top">
+  <div class="container py-2 d-flex justify-content-between align-items-center">
+    <div class="fw-bold" style="color:#4a3428">☕ Coffee Analytics</div>
+    <div class="d-flex gap-3">
+      <a href="#resultados">Resultados</a><a href="#comparacoes">Comparações</a><a href="#interativo">Exploração</a><a href="#metodo">Método</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="eyebrow">Portfólio acadêmico · Ciência de Dados</div>
+    <h1>Desempenho de vendas e lucro</h1>
+    <p>Análise exploratória interativa. O sistema busca e carrega automaticamente o arquivo de dados localizado na mesma pasta deste HTML.</p>
+  </div>
+</header>
+
+<main class="container py-4" id="resultados">
+  
+  <!-- Tela de Carregamento Automático -->
+  <div id="loading" class="cardx loading">
+    <div class="spinner-border mb-3" role="status"></div>
+    <div>Buscando arquivo de dados na pasta local...<br>
+    <span class="note">(Procurando por: dados.csv, dados.xlsx, a3-CoffeeData.csv, data.csv, dados.txt)</span></div>
+  </div>
+
+  <!-- Dashboard (inicialmente oculto) -->
+  <div id="dashboard" style="display:none">
+    <div class="d-flex justify-content-between align-items-end mb-3">
+      <div>
+        <div class="section-title">Visão geral da base</div>
+        <div class="section-sub">Indicadores calculados diretamente a partir do arquivo carregado.</div>
+      </div>
+      <span class="badge rounded-pill badge-soft" id="periodo"></span>
+    </div>
+
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Transações</div><div class="value" id="kpiN">—</div><div class="small">registros analisados</div></div></div>
+      <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Vendas</div><div class="value" id="kpiSales">—</div><div class="small">acumulado da base</div></div></div>
+      <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Lucro</div><div class="value" id="kpiProfit">—</div><div class="small">acumulado da base</div></div></div>
+      <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Estados</div><div class="value" id="kpiStates">—</div><div class="small">localidades registradas</div></div></div>
+    </div>
+
+    <section class="mb-5">
+      <div class="mb-3"><div class="section-title">1 · Comparação anual</div><div class="section-sub">Reprodução do acumulado anual apresentado nos dados.</div></div>
+      <div class="cardx panel"><div id="annual" class="chart"></div></div>
+    </section>
+
+    <section id="comparacoes" class="mb-5">
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="cardx panel">
+            <div class="panel-head"><div><div class="section-title">Vendas mensais</div><div class="section-sub">Comparativo entre anos</div></div></div>
+            <div id="monthlySales" class="chart chart-sm"></div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="cardx panel">
+            <div class="panel-head"><div><div class="section-title">Lucro mensal</div><div class="section-sub">Comparativo entre anos</div></div></div>
+            <div id="monthlyProfit" class="chart chart-sm"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <div class="mb-3"><div class="section-title">2 · Desempenho por dimensão</div><div class="section-sub">Agrupamentos utilizados na análise exploratória.</div></div>
+      <div class="row g-3">
+        <div class="col-lg-6"><div class="cardx panel"><div id="typeChart" class="chart chart-sm"></div></div></div>
+        <div class="col-lg-6"><div class="cardx panel"><div id="regionChart" class="chart chart-sm"></div></div></div>
+        <div class="col-lg-6"><div class="cardx panel"><div id="caffChart" class="chart chart-sm"></div></div></div>
+        <div class="col-lg-6"><div class="cardx panel"><div id="stateChart" class="chart chart-sm"></div></div></div>
+      </div>
+    </section>
+
+    <section class="mb-5">
+      <div class="mb-3"><div class="section-title">3 · Estatística descritiva</div><div class="section-sub">Valores reproduzidos a partir da lógica de <code>describe().round(0)</code>.</div></div>
+      <div class="cardx panel"><div class="table-wrap"><table class="table table-hover align-middle" id="statsTable"></table></div></div>
+    </section>
+
+    <section class="mb-5">
+      <div class="mb-3"><div class="section-title">4 · Síntese analítica</div><div class="section-sub">Leitura dos resultados apresentada no estudo exploratório.</div></div>
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <div class="insight"><strong>Desempenho Geral</strong><span>Verifique os KPIs acima para entender o volume total de vendas e a margem de lucro acumulada no período analisado.</span></div>
+        </div>
+        <div class="col-lg-4">
+          <div class="insight"><strong>Distribuição</strong><span>As medianas e médias na tabela descritiva ajudam a identificar se há concentração de observações em valores inferiores ou presença de outliers.</span></div>
+        </div>
+        <div class="col-lg-4">
+          <div class="insight"><strong>Dispersão</strong><span>O desvio-padrão do lucro indica a volatilidade dos resultados. Quanto maior, mais dispersos estão os valores em relação à média.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="interativo" class="mb-5">
+      <div class="mb-3"><div class="section-title">5 · Exploração interativa</div><div class="section-sub">Filtros independentes para explorar a base sem alterar os resultados reproduzidos acima.</div></div>
+      <div class="controls mb-3">
+        <div class="row g-3">
+          <div class="col-md-2"><label>Ano</label><select id="fYear" class="form-select"></select></div>
+          <div class="col-md-2"><label>Região</label><select id="fRegion" class="form-select"></select></div>
+          <div class="col-md-2"><label>Categoria</label><select id="fCategory" class="form-select"></select></div>
+          <div class="col-md-2"><label>Tipo</label><select id="fType" class="form-select"></select></div>
+          <div class="col-md-2"><label>Cafeína</label><select id="fCaff" class="form-select"></select></div>
+          <div class="col-md-2"><label>Estado</label><select id="fState" class="form-select"></select></div>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Vendas filtradas</div><div class="value" id="fSales">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Lucro filtrado</div><div class="value" id="fProfit">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Registros</div><div class="value" id="fN">—</div></div></div>
+        <div class="col-6 col-lg-3"><div class="cardx kpi"><div class="label">Lucro médio</div><div class="value" id="fAvg">—</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-7"><div class="cardx panel"><div id="interactiveBar" class="chart"></div></div></div>
+        <div class="col-lg-5"><div class="cardx panel"><div id="interactivePie" class="chart"></div></div></div>
+      </div>
+    </section>
+
+    <section class="mb-5" id="metodo">
+      <div class="mb-3"><div class="section-title">6 · Distribuição geográfica</div><div class="section-sub">Visualização interativa de vendas/lucro por estado e ano.</div></div>
+      <div class="cardx panel">
+        <div class="row g-2 mb-2">
+          <div class="col-sm-3"><select id="mapYear" class="form-select"></select></div>
+          <div class="col-sm-3"><select id="mapMetric" class="form-select"><option value="sales">Vendas</option><option value="profit">Lucro</option></select></div>
+        </div>
+        <div id="map" style="height:560px"></div>
+        <div class="note mt-2">⚠️ A visualização usa a projeção <code>USA-states</code>. Se seus dados forem de estados do Brasil, o mapa não renderizará corretamente sem ajuste no código (parâmetro <code>locationmode</code>).</div>
+      </div>
+    </section>
+
+    <section class="mb-4">
+      <div class="cardx panel">
+        <div class="section-title">Sobre esta análise</div>
+        <p class="note mt-2 mb-2">O dashboard reproduz operações centrais de análise exploratória: conversão da data, agregações mensais e anuais, agrupamentos por dimensões e análise estatística descritiva.</p>
+        <p class="note mb-0">O dashboard é uma camada de apresentação; os cálculos são executados localmente no seu navegador a partir do arquivo encontrado na pasta.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+    <span>☕ Coffee Analytics · Portfólio acadêmico</span>
+    <span>Dados locais · análise exploratória · JavaScript/PapaParse/Plotly</span>
+  </div>
+</footer>
+
+<script>
+let DATA = [], filtered = [];
+
+const money = n => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n||0);
+const num = n => new Intl.NumberFormat("pt-BR",{maximumFractionDigits:0}).format(n||0);
+const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+const layoutBase = {
+  paper_bgcolor:"rgba(0,0,0,0)", plot_bgcolor:"rgba(0,0,0,0)",
+  font:{family:"Inter, sans-serif",color:"#3d332d",size:11},
+  margin:{l:55,r:20,t:45,b:55}, hoverlabel:{font:{family:"Inter"}}
+};
+const config = {responsive:true,displaylogo:false,modeBarButtonsToRemove:["lasso2d","select2d"]};
+
+// Função auxiliar para encontrar chaves de forma case-insensitive (ex: "Sales", "SALES", "sales")
+function getKey(obj, key) {
+  const lowerKey = key.toLowerCase();
+  const foundKey = Object.keys(obj).find(k => k.toLowerCase() === lowerKey);
+  return foundKey ? obj[foundKey] : undefined;
+}
+
+function parseDate(dateStr) {
+  if (!dateStr) return new Date();
+  let d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d;
+  
+  // Fallback para formato DD-MMM-AA (ex: 15-Jan-10)
+  const p = String(dateStr).split("-");
+  if (p.length === 3) {
+    const monthsMap = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+    const monthStr = p[1].toLowerCase();
+    const monthIdx = monthsMap[monthStr] !== undefined ? monthsMap[monthStr] : (parseInt(p[1], 10) - 1);
+    const year = 2000 + Number(p[2]);
+    d = new Date(year, monthIdx, Number(p[0]));
+    if (!isNaN(d.getTime())) return d;
+  }
+  return new Date();
+}
+
+function parseData(rows) {
+  return rows.filter(r => r && Object.keys(r).length > 0).map(r => {
+    const dateObj = parseDate(getKey(r, 'date'));
+    return {
+      date: dateObj,
+      sales: parseFloat(getKey(r, 'sales')) || 0,
+      profit: parseFloat(getKey(r, 'profit')) || 0,
+      region: String(getKey(r, 'region') || "Desconhecido").trim(),
+      state: String(getKey(r, 'state') || "Desconhecido").trim(),
+      category: String(getKey(r, 'category') || "Desconhecido").trim(),
+      type: String(getKey(r, 'type') || "Desconhecido").trim(),
+      caffeination: String(getKey(r, 'caffeination') || "Desconhecido").trim(),
+      year: dateObj.getFullYear()
+    };
+  });
+}
+
+function groupSum(rows, key){
+  const m = {};
+  rows.forEach(r => {
+    m[r[key]] ??= {sales:0, profit:0}; 
+    m[r[key]].sales += r.sales; 
+    m[r[key]].profit += r.profit;
+  });
+  return Object.entries(m).map(([k,v]) => ({key:k, ...v})).sort((a,b) => b.sales - a.sales);
+}
+
+function groupYear(rows){
+  const m = {};
+  rows.forEach(r => {
+    m[r.year] ??= {sales:0, profit:0, n:0};
+    m[r.year].sales += r.sales;
+    m[r.year].profit += r.profit;
+    m[r.year].n++;
+  });
+  return Object.entries(m).map(([year,v]) => ({year:+year, ...v})).sort((a,b) => a.year - b.year);
+}
+
+function groupMonth(rows, year, metric){
+  const m = Array(12).fill(0);
+  rows.filter(r => r.year === year).forEach(r => m[r.date.getMonth()] += r[metric]);
+  return m;
+}
+
+function chartGrouped(id, rows, title, horizontal=false){
+  const labels = rows.map(x => x.key), sales = rows.map(x => x.sales), profit = rows.map(x => x.profit);
+  const data = horizontal ? [
+    {type:"bar",orientation:"h",y:labels,x:sales,name:"Vendas",marker:{color:"#6f4e37"},text:sales.map(money),textposition:"outside",cliponaxis:false},
+    {type:"bar",orientation:"h",y:labels,x:profit,name:"Lucro",marker:{color:"#54745b"},text:profit.map(money),textposition:"outside",cliponaxis:false}
+  ] : [
+    {type:"bar",x:labels,y:sales,name:"Vendas",marker:{color:"#6f4e37"},text:sales.map(money),textposition:"outside",cliponaxis:false},
+    {type:"bar",x:labels,y:profit,name:"Lucro",marker:{color:"#54745b"},text:profit.map(money),textposition:"outside",cliponaxis:false}
+  ];
+  const layout = {...layoutBase, title:{text:title,font:{size:14}}, barmode:"group", margin:horizontal?{l:80,r:75,t:45,b:30}:layoutBase.margin,
+    xaxis:{automargin:true}, yaxis:{automargin:true}, legend:{orientation:"h",y:1.1,x:0}};
+  Plotly.newPlot(id, data, layout, config);
+}
+
+function annual(){
+  const rows = groupYear(DATA);
+  Plotly.newPlot("annual",[
+    {type:"bar",x:rows.map(r=>r.year),y:rows.map(r=>r.sales),name:"Vendas",marker:{color:"#6f4e37"},text:rows.map(r=>money(r.sales)),textposition:"outside"},
+    {type:"bar",x:rows.map(r=>r.year),y:rows.map(r=>r.profit),name:"Lucro",marker:{color:"#54745b"},text:rows.map(r=>money(r.profit)),textposition:"outside"}
+  ],{...layoutBase,title:{text:"Acumulado anual · Vendas vs lucro",font:{size:14}},barmode:"group",
+    xaxis:{dtick:1},yaxis:{title:"Valor total (US$)",rangemode:"tozero"},legend:{orientation:"h",y:1.1,x:0}},config);
+}
+
+function monthly(){
+  const years = [...new Set(DATA.map(r => r.year))].sort((a,b) => a - b);
+  if (years.length < 2) {
+    document.getElementById("monthlySales").innerHTML = "<div class='text-center p-4 text-muted'>Dados insuficientes para comparativo mensal (necessário pelo menos 2 anos).</div>";
+    document.getElementById("monthlyProfit").innerHTML = "<div class='text-center p-4 text-muted'>Dados insuficientes para comparativo mensal (necessário pelo menos 2 anos).</div>";
+    return;
+  }
+  const y1 = years[years.length - 2];
+  const y2 = years[years.length - 1];
+  const s1 = groupMonth(DATA, y1, "sales"), s2 = groupMonth(DATA, y2, "sales");
+  const p1 = groupMonth(DATA, y1, "profit"), p2 = groupMonth(DATA, y2, "profit");
+  
+  const mk = (id, a, b, title, ytitle) => {
+    Plotly.newPlot(id,[
+      {x:months, y:a, name:String(y1), mode:"lines+markers", line:{color:"#c4954d",width:3}, marker:{size:7}, text:a.map(money), hovertemplate:`${y1} · %{x}<br>%{text}<extra></extra>`},
+      {x:months, y:b, name:String(y2), mode:"lines+markers", line:{color:"#54745b",width:3}, marker:{size:7}, text:b.map(money), hovertemplate:`${y2} · %{x}<br>%{text}<extra></extra>`}
+    ],{...layoutBase,title:{text:title,font:{size:14}},yaxis:{title:ytitle,tickprefix:"$"},legend:{orientation:"h",y:1.1,x:0}},config);
+  };
+  mk("monthlySales", s1, s2, "Comparativo mensal de vendas", "Vendas (US$)");
+  mk("monthlyProfit", p1, p2, "Comparativo mensal de lucros", "Lucro (US$)");
+}
+
+function stats(){
+  const years = [...new Set(DATA.map(r => r.year))].sort((a,b) => a - b);
+  if (years.length === 0) return;
+  const metrics = ["sales", "profit"];
+  const labels = ["count", "mean", "std", "min", "25%", "50%", "75%", "max"];
+  
+  let rowsHtml = `<thead><tr><th>Métrica</th><th>Medida</th>${years.map(y => `<th>${y}</th>`).join("")}</tr></thead><tbody>`;
+  metrics.forEach(metric => labels.forEach(l => {
+    const vals = years.map(y => {
+      const a = DATA.filter(r => r.year === y).map(r => r[metric]).sort((a,b) => a - b);
+      const n = a.length;
+      if (n === 0) return 0;
+      const mean = a.reduce((x,z) => x + z, 0) / n;
+      const variance = n > 1 ? a.reduce((x,z) => x + (z - mean)**2, 0) / (n - 1) : 0;
+      const q = p => { const pos = (n - 1) * p, lo = Math.floor(pos), hi = Math.ceil(pos); return lo === hi ? a[lo] : a[lo] + (a[hi] - a[lo]) * (pos - lo); };
+      return {count: n, mean, std: Math.sqrt(variance), min: a[0], "25%": q(.25), "50%": q(.5), "75%": q(.75), max: a[n-1]}[l];
+    });
+    rowsHtml += `<tr><td>${metric === "sales" ? "Vendas" : "Lucro"}</td><td>${l}</td>${vals.map(v => `<td>${num(Math.round(v))}</td>`).join("")}</tr>`;
+  }));
+  rowsHtml += "</tbody>";
+  document.getElementById("statsTable").innerHTML = rowsHtml;
+}
+
+function fillSelect(id, values){
+  const el = document.getElementById(id); 
+  el.innerHTML = '<option value="__all">Todos</option>' + values.sort((a,b) => a.localeCompare(b)).map(v => `<option>${v}</option>`).join("");
+}
+
+function setupFilters(){
+  const years = [...new Set(DATA.map(r => r.year))].sort().map(String);
+  document.getElementById("fYear").innerHTML = '<option value="__all">Todos</option>' + years.map(v => `<option>${v}</option>`).join("");
+  fillSelect("fRegion", [...new Set(DATA.map(r => r.region))]);
+  fillSelect("fCategory", [...new Set(DATA.map(r => r.category))]);
+  fillSelect("fType", [...new Set(DATA.map(r => r.type))]);
+  fillSelect("fCaff", [...new Set(DATA.map(r => r.caffeination))]);
+  fillSelect("fState", [...new Set(DATA.map(r => r.state))]);
+  ["fYear","fRegion","fCategory","fType","fCaff","fState"].forEach(id => document.getElementById(id).addEventListener("change", updateInteractive));
+}
+
+function updateInteractive(){
+  const get = id => document.getElementById(id).value;
+  filtered = DATA.filter(r =>
+    (get("fYear") === "__all" || String(r.year) === get("fYear")) &&
+    (get("fRegion") === "__all" || r.region === get("fRegion")) &&
+    (get("fCategory") === "__all" || r.category === get("fCategory")) &&
+    (get("fType") === "__all" || r.type === get("fType")) &&
+    (get("fCaff") === "__all" || r.caffeination === get("fCaff")) &&
+    (get("fState") === "__all" || r.state === get("fState"))
+  );
+  const sales = filtered.reduce((a,r) => a + r.sales, 0);
+  const profit = filtered.reduce((a,r) => a + r.profit, 0);
+  
+  document.getElementById("fSales").textContent = money(sales);
+  document.getElementById("fProfit").textContent = money(profit);
+  document.getElementById("fN").textContent = num(filtered.length);
+  document.getElementById("fAvg").textContent = money(filtered.length ? profit / filtered.length : 0);
+
+  const by = groupSum(filtered, "type").slice(0, 8);
+  Plotly.newPlot("interactiveBar",[
+    {type:"bar",x:by.map(x=>x.key),y:by.map(x=>x.sales),name:"Vendas",marker:{color:"#6f4e37"},text:by.map(x=>money(x.sales)),textposition:"outside"},
+    {type:"bar",x:by.map(x=>x.key),y:by.map(x=>x.profit),name:"Lucro",marker:{color:"#54745b"},text:by.map(x=>money(x.profit)),textposition:"outside"}
+  ],{...layoutBase,title:{text:"Desempenho por tipo de produto",font:{size:14}},barmode:"group",xaxis:{automargin:true},legend:{orientation:"h",y:1.1,x:0}},config);
+  
+  const cats = groupSum(filtered, "category");
+  Plotly.newPlot("interactivePie",[
+    {type:"pie",labels:cats.map(x=>x.key),values:cats.map(x=>x.sales),hole:.58, textinfo:"label+percent",marker:{line:{color:"#fff",width:2}}}
+  ],{...layoutBase,title:{text:"Participação das vendas por categoria",font:{size:14}},showlegend:false},config);
+}
+
+function updateMap(){
+  const yearSelect = document.getElementById("mapYear");
+  const years = [...new Set(DATA.map(r => r.year))].sort((a,b) => a - b);
+  yearSelect.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join("");
+  
+  const year = +yearSelect.value;
+  const metric = document.getElementById("mapMetric").value;
+  const rows = groupSum(DATA.filter(r => r.year === year), "state");
+  
+  Plotly.newPlot("map",[{
+    type:"choropleth",locationmode:"USA-states",locations:rows.map(x=>x.key),z:rows.map(x=>x[metric]),
+    colorscale:metric==="sales"?"Blues":"Greens",colorbar:{title:metric==="sales"?"Vendas":"Lucro"},
+    text:rows.map(x=>x.key),hovertemplate:"%{text}<br>"+(metric==="sales"?"Vendas":"Lucro")+": $%{z:,.0f}<extra></extra>"
+  }],{geo:{scope:"usa",lakecolor:"white",bgcolor:"rgba(0,0,0,0)"},paper_bgcolor:"rgba(0,0,0,0)",
+     margin:{l:0,r:0,t:30,b:0},title:{text:`${metric==="sales"?"Faturamento":"Lucro"} por estado · ${year}`,font:{size:15}}},config);
+}
+
+function showDashboard() {
+  if (!DATA || DATA.length === 0) {
+    document.getElementById('loading').innerHTML = `
+      <div style="color: #c0392b; padding: 20px; max-width: 600px; margin: 0 auto;">
+        <strong>Arquivo encontrado, mas está vazio ou sem dados válidos.</strong><br>
+        Verifique se o arquivo possui cabeçalhos (ex: date, sales, profit, state, region, category, type, caffeination) e linhas de dados.
+      </div>`;
+    return;
+  }
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  
+  const minYear = Math.min(...DATA.map(r => r.year));
+  const maxYear = Math.max(...DATA.map(r => r.year));
+  document.getElementById("periodo").textContent = `${minYear} — ${maxYear}`;
+  document.getElementById("kpiN").textContent = num(DATA.length);
+  document.getElementById("kpiSales").textContent = money(DATA.reduce((a,r) => a + r.sales, 0));
+  document.getElementById("kpiProfit").textContent = money(DATA.reduce((a,r) => a + r.profit, 0));
+  document.getElementById("kpiStates").textContent = num(new Set(DATA.map(r => r.state)).size);
+  
+  annual();
+  monthly();
+  stats();
+  chartGrouped("typeChart", groupSum(DATA, "type"), "Acumulado por tipo de produto");
+  chartGrouped("regionChart", groupSum(DATA, "region"), "Acumulado por região");
+  chartGrouped("caffChart", groupSum(DATA, "caffeination"), "Acumulado por tipo de cafeína");
+  chartGrouped("stateChart", groupSum(DATA, "state").slice(0, 10), "Top 10 estados · acumulado", true);
+  
+  setupFilters();
+  updateInteractive();
+  updateMap();
+  
+  document.getElementById("mapYear").addEventListener("change", updateMap);
+  document.getElementById("mapMetric").addEventListener("change", updateMap);
+}
+
+// =====================================================================
+// CARREGAMENTO AUTOMÁTICO DO ARQUIVO NA PASTA LOCAL
+// =====================================================================
+async function autoLoadData() {
+  // Lista de nomes possíveis para o arquivo de dados (respeite maiúsculas/minúsculas)
+  const possibleFiles = ['dados.csv', 'dados.xlsx', 'a3-CoffeeData.csv', 'data.csv', 'data.xlsx', 'dados.txt'];
+  let loaded = false;
+
+  for (const filename of possibleFiles) {
+    try {
+      // Adiciona timestamp para evitar cache do navegador
+      const response = await fetch(filename + '?t=' + Date.now());
+      if (!response.ok) continue; // Arquivo não encontrado, tenta o próximo
+
+      const fileExt = filename.split('.').pop().toLowerCase();
+      
+      if (fileExt === 'csv' || fileExt === 'txt') {
+        const text = await response.text();
+        Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(res) {
+            DATA = parseData(res.data);
+            loaded = true;
+            showDashboard();
+          }
+        });
+      } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+        const arrayBuffer = await response.arrayBuffer();
+        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const json = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: "" });
+        DATA = parseData(json);
+        loaded = true;
+        showDashboard();
+      } else if (fileExt === 'sql') {
+        document.getElementById('loading').innerHTML = `
+          <div style="color: #c0392b; padding: 20px; max-width: 600px; margin: 0 auto; text-align:left;">
+            <strong>Formato .sql não suportado para leitura direta.</strong><br>
+            Arquivos SQL contêm comandos de banco de dados, não dados tabulares diretos que o navegador possa ler. 
+            Por favor, exporte sua tabela para <strong>.csv</strong> ou <strong>.xlsx</strong> e nomeie como <code>dados.csv</code> ou <code>dados.xlsx</code>.
+          </div>`;
+        return;
+      }
+      
+      if (loaded) return; // Sucesso, sai da função
+    } catch (error) {
+      // Erro de CORS (comum em file://) ou rede
+      console.warn(`Falha ao tentar carregar ${filename}:`, error);
+    }
+  }
+
+  // Se chegou aqui, nenhum arquivo foi carregado
+  if (!loaded) {
+    document.getElementById('loading').innerHTML = `
+      <div style="color: #c0392b; padding: 30px; max-width: 700px; margin: 0 auto; text-align: left; background: #fff; border-radius: 12px; border: 1px solid #e0d4c8;">
+        <h4 style="margin-top:0">⚠️ Não foi possível carregar os dados automaticamente</h4>
+        <p>Para que este dashboard funcione <strong>sem upload manual</strong>, siga estas 2 etapas:</p>
+        <ol>
+          <li>Salve seu arquivo de dados na <strong>mesma pasta</strong> deste arquivo HTML com um destes nomes exatos (respeite maiúsculas/minúsculas): 
+              <code>dados.csv</code>, <code>dados.xlsx</code>, <code>a3-CoffeeData.csv</code> ou <code>data.csv</code>.</li>
+          <li><strong>Execute através de um servidor local.</strong> Navegadores bloqueiam por segurança (política CORS) a leitura automática de arquivos quando você abre o HTML diretamente (URL iniciando com <code>file://</code>). 
+              <br><br>
+              <strong>Como resolver (escolha uma opção):</strong>
+              <ul>
+                <li><strong>VS Code:</strong> Instale a extensão "Live Server", clique com o botão direito no HTML e escolha "Open with Live Server".</li>
+                <li><strong>Python:</strong> Abra o terminal na pasta e digite <code>python -m http.server</code> (ou <code>python3 -m http.server</code>), depois acesse <code>http://localhost:8000</code>.</li>
+                <li><strong>Node.js:</strong> Instale o <code>http-server</code> (<code>npm i -g http-server</code>) e rode na pasta.</li>
+              </ul>
+          </li>
+        </ol>
+        <p class="note" style="margin-bottom:0">Se você já está usando um servidor local e vê esta mensagem, verifique se o nome do arquivo de dados corresponde exatamente a uma das opções listadas no código.</p>
+      </div>
+    `;
+  }
+}
+
+// Inicia a busca automática ao carregar a página
+document.addEventListener('DOMContentLoaded', autoLoadData);
+</script>
+</body>
+</html>
