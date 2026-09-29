@@ -463,8 +463,8 @@ function showDashboard() {
 // CARREGAMENTO AUTOMÁTICO DO ARQUIVO NA PASTA LOCAL
 // =====================================================================
 async function autoLoadData() {
-  // Lista de nomes possíveis para o arquivo de dados (respeite maiúsculas/minúsculas)
-  const possibleFiles = ['a3-CoffeeData.csv'];
+  // Prioriza explicitamente o a3-CoffeeData.csv e mantém alternativas de suporte
+  const possibleFiles = ['a3-CoffeeData.csv', 'dados.csv', 'dados.xlsx', 'data.csv'];
   let loaded = false;
 
   for (const filename of possibleFiles) {
@@ -496,48 +496,7 @@ async function autoLoadData() {
         showDashboard();
       } else if (fileExt === 'sql') {
         document.getElementById('loading').innerHTML = `
-          <div style="color: #c0392b; padding: 20px; max-width: 600px; margin: 0 auto; text-align:left;">
-            <strong>Formato .sql não suportado para leitura direta.</strong><br>
-            Arquivos SQL contêm comandos de banco de dados, não dados tabulares diretos que o navegador possa ler. 
-            Por favor, exporte sua tabela para <strong>.csv</strong> ou <strong>.xlsx</strong> e nomeie como <code>dados.csv</code> ou <code>dados.xlsx</code>.
-          </div>`;
-        return;
-      }
-      
-      if (loaded) return; // Sucesso, sai da função
-    } catch (error) {
-      // Erro de CORS (comum em file://) ou rede
-      console.warn(`Falha ao tentar carregar ${filename}:`, error);
-    }
-  }
-
-  // Se chegou aqui, nenhum arquivo foi carregado
-  if (!loaded) {
-    document.getElementById('loading').innerHTML = `
-      <div style="color: #c0392b; padding: 30px; max-width: 700px; margin: 0 auto; text-align: left; background: #fff; border-radius: 12px; border: 1px solid #e0d4c8;">
-        <h4 style="margin-top:0">⚠️ Não foi possível carregar os dados automaticamente</h4>
-        <p>Para que este dashboard funcione <strong>sem upload manual</strong>, siga estas 2 etapas:</p>
-        <ol>
-          <li>Salve seu arquivo de dados na <strong>mesma pasta</strong> deste arquivo HTML com um destes nomes exatos (respeite maiúsculas/minúsculas): 
-              <code>dados.csv</code>, <code>dados.xlsx</code>, <code>a3-CoffeeData.csv</code> ou <code>data.csv</code>.</li>
-          <li><strong>Execute através de um servidor local.</strong> Navegadores bloqueiam por segurança (política CORS) a leitura automática de arquivos quando você abre o HTML diretamente (URL iniciando com <code>file://</code>). 
-              <br><br>
-              <strong>Como resolver (escolha uma opção):</strong>
-              <ul>
-                <li><strong>VS Code:</strong> Instale a extensão "Live Server", clique com o botão direito no HTML e escolha "Open with Live Server".</li>
-                <li><strong>Python:</strong> Abra o terminal na pasta e digite <code>python -m http.server</code> (ou <code>python3 -m http.server</code>), depois acesse <code>http://localhost:8000</code>.</li>
-                <li><strong>Node.js:</strong> Instale o <code>http-server</code> (<code>npm i -g http-server</code>) e rode na pasta.</li>
-              </ul>
-          </li>
-        </ol>
-        <p class="note" style="margin-bottom:0">Se você já está usando um servidor local e vê esta mensagem, verifique se o nome do arquivo de dados corresponde exatamente a uma das opções listadas no código.</p>
-      </div>
-    `;
-  }
-}
-
-// Inicia a busca automática ao carregar a página
-document.addEventListener('DOMContentLoaded', autoLoadData);
+        
 </script>
 </body>
 </html>
